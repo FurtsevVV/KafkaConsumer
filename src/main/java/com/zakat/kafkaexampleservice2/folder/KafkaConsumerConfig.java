@@ -13,6 +13,7 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.KafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.listener.SeekToCurrentErrorHandler;
 import org.springframework.kafka.support.converter.BatchMessagingMessageConverter;
 import org.springframework.kafka.support.converter.StringJsonMessageConverter;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
@@ -37,9 +38,7 @@ public class KafkaConsumerConfig {
     TopicPartition partition2 = new TopicPartition(topicname, 2);
 
 
-
-    @Bean
-    public ConsumerFactory<String, String> consumerFactory() {
+    Map<String, Object> stringProperties(){
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
@@ -50,7 +49,15 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, true);
 
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-        return new DefaultKafkaConsumerFactory<>(props);        }
+        return props;
+    }
+
+
+
+    @Bean
+    public ConsumerFactory<String, String> consumerFactory() {
+
+        return new DefaultKafkaConsumerFactory<>(stringProperties());        }
 
 
     //фэктори для списков сообщений. В свойставах указываем что мы исполтзуем конвертер для массивов BatchMessagingMessageConverter
@@ -60,10 +67,13 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, String> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
-        factory.setBatchListener(true);
-        factory.setMessageConverter(new BatchMessagingMessageConverter(converter()));
+        factory.setBatchListener(true);  // <<<<<<<<<<<<<<<<<<<<<<<<<
+        factory.setMessageConverter(converter());
         return factory;
     }
+
+
+
 
 
     // фэктори для одиночных сообщений. В свойствах указываем что мы не слушаем массивы batch = false
@@ -118,6 +128,9 @@ public class KafkaConsumerConfig {
         factory.setConsumerFactory(messageConsumerFactory());
         return factory;
     }
+
+
+
 
 
 
